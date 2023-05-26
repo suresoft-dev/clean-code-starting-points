@@ -15,42 +15,67 @@ Special Items:
 - "Conjured" items degrade in Quality twice as fast as normal items
 """
 
-class GildedRose:
 
+def decay_sulfuras(item):
+    pass
+
+
+def decay_regular(item):
+    item.quality = item.quality - 1
+    if item.sell_in < 0:
+        item.quality = item.quality - 1
+
+
+def decay_brie(item):
+    item.quality = item.quality + 1
+    if item.sell_in < 0:
+        item.quality = item.quality + 1
+
+
+def decay_backstage_passes(item):
+    item.quality = item.quality + 1
+    if item.sell_in < 10:
+        item.quality = item.quality + 1
+    if item.sell_in < 5:
+        item.quality = item.quality + 1
+
+    if item.sell_in < 0:
+        item.quality = 0
+
+
+item_decays = {
+    "Aged Brie": decay_brie,
+    "Backstage passes to a TAFKAL80ETC concert": decay_backstage_passes,
+    "Sulfuras, Hand of Ragnaros": decay_sulfuras,
+}
+
+
+class GildedRose:
     def __init__(self, items: list["Item"]):
         self.items = items
 
     def update_quality(self):
         for item in self.items:
-            if item.name != "Aged Brie" and item.name != "Backstage passes to a TAFKAL80ETC concert":
-                if item.quality > 0:
-                    if item.name != "Sulfuras, Hand of Ragnaros":
-                        item.quality = item.quality - 1
-            else:
-                if item.quality < 50:
-                    item.quality = item.quality + 1
-                    if item.name == "Backstage passes to a TAFKAL80ETC concert":
-                        if item.sell_in < 11:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-                        if item.sell_in < 6:
-                            if item.quality < 50:
-                                item.quality = item.quality + 1
-            if item.name != "Sulfuras, Hand of Ragnaros":
-                item.sell_in = item.sell_in - 1
-            if item.sell_in < 0:
-                if item.name != "Aged Brie":
-                    if item.name != "Backstage passes to a TAFKAL80ETC concert":
-                        if item.quality > 0:
-                            if item.name != "Sulfuras, Hand of Ragnaros":
-                                item.quality = item.quality - 1
-                    else:
-                        item.quality = item.quality - item.quality
-                else:
-                    if item.quality < 50:
-                        item.quality = item.quality + 1
+            # can we also just continue for Sulfaras and get rid of many checks?
+            # if item.name == "Sulfuras, Hand of Ragnaros":
+            #    continue
+            # ??? +2
+            self.decay(item)
+
+    def decay(self, item: "Item") -> None:
+        if item.name != "Sulfuras, Hand of Ragnaros":
+            item.sell_in = item.sell_in - 1
+
+        # Quality updates
+        decay = item_decays.get(item.name, decay_regular)
+        decay(item)
+
+        # extra check method?
+        if item.name != "Sulfuras, Hand of Ragnaros":
+            item.quality = max(0, min(50, item.quality))
 
 
+# sub classes using Polymorphism? items that are gone bad, special items
 class Item:
     def __init__(self, name: str, sell_in: int, quality: int):
         self.name = name
